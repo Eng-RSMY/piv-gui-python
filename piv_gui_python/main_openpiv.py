@@ -24,8 +24,8 @@ class Main(QtGui.QWidget):
         ###TODO: functionalize the load button to choose the directory of the images/(type?).
         self.frames = sorted(glob.glob('./*.png'))
         self.raw_frames = sorted(glob.glob('./raw/*.bmp'))
-        self.frame_size_x = scipy.misc.imread(self.frames[0]).shape[1]
-        self.frame_size_y = scipy.misc.imread(self.frames[0]).shape[0]
+        self.frame_size_x = scipy.misc.imread(self.raw_frames[0]).shape[1]
+        self.frame_size_y = scipy.misc.imread(self.raw_frames[0]).shape[0]
         
         #set some default values. 
         ###TODO:These values should be automatically set to whatever IW/overlap sizes were set in the analysis.
@@ -49,7 +49,7 @@ class Main(QtGui.QWidget):
         
         #setup main slider
         self.ui.main_slider_value.valueChanged.connect(self.main_slider_value_changed)
-        self.ui.main_slider_value.setMaximum(len(self.frames)-1)
+        self.ui.main_slider_value.setMaximum(len(self.raw_frames)-1)
         
         #setup IW/overlap size input boxes
         self.ui.iw_small_size.valueChanged.connect(self.set_small_iw_size)
@@ -72,7 +72,7 @@ class Main(QtGui.QWidget):
         self.ui.plot_corr_mat.clicked.connect(self.plot_corr_mat_btn_clicked)
         
         #set up the initial images on the GUI, so it would look better
-        self.main_pixmap = QtGui.QPixmap(self.frames[0])
+        self.main_pixmap = QtGui.QPixmap(self.raw_frames[0])
         self.draw_iw_bounds(self.main_pixmap)
         self.ui.label_main.setPixmap(self.main_pixmap)
         self.display_small_iw()
@@ -85,7 +85,9 @@ class Main(QtGui.QWidget):
         self.update_iw_slider_max()
         
         #Sets up mouse action on main window (not tested with scaling...)
-        self.ui.label_main.mousePressEvent = self.getPos  
+        self.ui.label_main.mousePressEvent = self.getPos 
+        
+        self.corr_mat_plt = None 
         
 
     #######################
@@ -106,8 +108,8 @@ class Main(QtGui.QWidget):
     def update_iw_slider_max(self):
         """Enables the sliders to be 'draged by mouse' and to match the IW positions."""
         #It seems that there is no nice and simple way to be able to use "mouse sliding" of sliders so that the values would not move at arbitrary points, but to exact IW positions. One workaround is to set the maximum value of the slider to the one divided by the big IW size. However, we must take into account that we might have an overlap. This means quite a long expression, but the code could probably be cleaned up a bit by setting the "self.iw_big_size_value - self.overlap_size_value" to a single instance variable at init. It gets particularly messy in display_small/big_iw functions...
-        self.ui.iw_pos_x.setMaximum( (scipy.misc.imread(self.frames[0]).shape[1] - self.iw_big_size_value )/(self.iw_big_size_value - self.overlap_size_value ) )
-        self.ui.iw_pos_y.setMaximum( (scipy.misc.imread(self.frames[0]).shape[0] - self.iw_big_size_value )/(self.iw_big_size_value - self.overlap_size_value ) )
+        self.ui.iw_pos_x.setMaximum( (scipy.misc.imread(self.raw_frames[0]).shape[1] - self.iw_big_size_value )/(self.iw_big_size_value - self.overlap_size_value ) )
+        self.ui.iw_pos_y.setMaximum( (scipy.misc.imread(self.raw_frames[0]).shape[0] - self.iw_big_size_value )/(self.iw_big_size_value - self.overlap_size_value ) )
         
     def update_overlap_max(self):
         """Updates the big IW overlap size."""
@@ -167,7 +169,7 @@ class Main(QtGui.QWidget):
     
     def display_main_image(self):
         """Displays the main image."""
-        self.main_pixmap = QtGui.QPixmap(self.frames[self.main_slider_value])
+        self.main_pixmap = QtGui.QPixmap(self.raw_frames[self.main_slider_value])
         #Reference image updated...
         self.main_pixmap_ref_array = scipy.misc.imread(self.raw_frames[self.main_slider_value])
         #Draws IW bounds
@@ -231,6 +233,8 @@ class Main(QtGui.QWidget):
         if self.state == True:
             self.display_small_iw()
             self.display_big_iw()
+        if self.corr_mat_plt.isVisible():
+            self.plot_corr_mat_btn_clicked()
         else:
             pass
 
@@ -240,6 +244,7 @@ class Main(QtGui.QWidget):
         calc_cor_matrix = openpiv.process.correlate_windows( window_a = self.small_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), window_b = self.big_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), corr_method = 'fft', nfftx = None, nffty = None )
 
         self.corr_mat_plt = Window(calc_cor_matrix.shape[0],calc_cor_matrix.shape[1],calc_cor_matrix, self.main_slider_value)
+            
         self.corr_mat_plt.show()
         
         
