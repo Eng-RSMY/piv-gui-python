@@ -233,19 +233,21 @@ class Main(QtGui.QWidget):
         if self.state == True:
             self.display_small_iw()
             self.display_big_iw()
-        if self.corr_mat_plt.isVisible():
-            self.plot_corr_mat_btn_clicked()
+        if self.corr_mat_plt and self.corr_mat_plt.isVisible():
+            calc_cor_matrix = openpiv.process.correlate_windows( window_a = self.small_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), window_b = self.big_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), corr_method = 'fft', nfftx = None, nffty = None )
+            self.corr_mat_plt.update_parameters(calc_cor_matrix)
         else:
             pass
 
     def plot_corr_mat_btn_clicked(self):
         """This function calls a pop up window which shows the correlation matrix"""
         
-        calc_cor_matrix = openpiv.process.correlate_windows( window_a = self.small_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), window_b = self.big_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), corr_method = 'fft', nfftx = None, nffty = None )
+        self.calc_cor_matrix = openpiv.process.correlate_windows( window_a = self.small_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), window_b = self.big_windows[self.iw_pos_x_value/(self.iw_big_size_value - self.overlap_size_value) + (self.iw_pos_y_value/(self.iw_big_size_value- self.overlap_size_value))*self.field_shape[1]].astype(np.float64), corr_method = 'fft', nfftx = None, nffty = None )
 
-        self.corr_mat_plt = Window(calc_cor_matrix.shape[0],calc_cor_matrix.shape[1],calc_cor_matrix, self.main_slider_value)
+        self.corr_mat_plt = Window(self.calc_cor_matrix.shape[0],self.calc_cor_matrix.shape[1],self.calc_cor_matrix, self.main_slider_value)
             
         self.corr_mat_plt.show()
+        
         
         
     #################

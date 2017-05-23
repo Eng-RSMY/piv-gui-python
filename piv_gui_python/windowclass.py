@@ -34,6 +34,12 @@ class Window(QtGui.QDialog):
         layout.addWidget(self.canvas)
         self.setLayout(layout)
         
+    def update_parameters(self, corr_mat):
+        # self.frame_number = frame_number
+        self.corr_mat = corr_mat
+        self.plot()
+        
+        
 
     def plot(self):
         
